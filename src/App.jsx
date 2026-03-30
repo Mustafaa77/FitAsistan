@@ -4,9 +4,10 @@ import { AuthProvider } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import BMICalculator from './pages/BMICalculator';
 import VerifyEmail from './pages/VerifyEmail';
 import { 
-  BMICalculator, CreateDiet, Recipes, Calories, 
+  CreateDiet, Recipes, Calories, 
   DietPlan, HealthDiary, Profile 
 } from './pages/PlaceholderPages';
 import ProtectedRoute from './components/ProtectedRoute';

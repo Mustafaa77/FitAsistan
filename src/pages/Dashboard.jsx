@@ -90,21 +90,6 @@ const Dashboard = () => {
         </div>
       </section>
 
-      {/* Lab Work Placeholder Section (for educational purposes) */}
-      <section className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-        <h3 className="font-bold text-gray-800 mb-4">Laboratuvar Ödevi Alanı</h3>
-        <div className="flex space-x-4">
-          <input 
-            type="text" 
-            placeholder="Veri girin..." 
-            className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
-          />
-          <button className="bg-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors">
-            Gönder
-          </button>
-        </div>
-      </section>
-
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
