@@ -5,10 +5,11 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import BMICalculator from './pages/BMICalculator';
+import HealthDiary from './pages/HealthDiary';
 import VerifyEmail from './pages/VerifyEmail';
 import { 
   CreateDiet, Recipes, Calories, 
-  DietPlan, HealthDiary, Profile 
+  DietPlan, Profile 
 } from './pages/PlaceholderPages';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
