@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FaHome, FaUtensils, FaBook, FaCalculator, FaCalendarAlt, 
-  FaNotesMedical, FaUser, FaSignOutAlt, FaLeaf, FaTimes 
+  FaNotesMedical, FaUser, FaSignOutAlt, FaLeaf, FaTimes, FaCog
 } from 'react-icons/fa';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
@@ -19,6 +19,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     { name: 'VKİ Hesaplama', path: '/bmi', icon: <FaCalculator /> },
     { name: 'Diyet Planı', path: '/diet-plan', icon: <FaCalendarAlt /> },
     { name: 'Sağlık Günlüğü', path: '/health-diary', icon: <FaNotesMedical /> },
+    { name: 'Ayarlar', path: '/settings', icon: <FaCog /> },
     { name: 'Profil', path: '/profile', icon: <FaUser /> },
   ];
 

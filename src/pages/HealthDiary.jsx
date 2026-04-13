@@ -20,7 +20,7 @@ const HealthDiary = () => {
 
   // --- WATER TRACKING STATE ---
   const [waterAmount, setWaterAmount] = useState(0);
-  const waterTarget = 2500;
+  const [waterTarget, setWaterTarget] = useState(2500);
 
   // --- SLEEP TRACKING STATE ---
   const [sleepDate, setSleepDate] = useState(today);
@@ -43,6 +43,12 @@ const HealthDiary = () => {
   // --- INITIAL DATA LOAD (Defensive Programming) ---
   useEffect(() => {
     try {
+      // Water Target from Settings
+      const savedTarget = localStorage.getItem('suHedefi');
+      if (savedTarget) {
+        setWaterTarget(parseInt(savedTarget));
+      }
+
       // Water Data
       const savedWater = localStorage.getItem('suVerileri');
       if (savedWater) {

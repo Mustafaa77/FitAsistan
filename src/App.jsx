@@ -6,6 +6,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import BMICalculator from './pages/BMICalculator';
 import HealthDiary from './pages/HealthDiary';
+import Settings from './pages/Settings';
 import VerifyEmail from './pages/VerifyEmail';
 import { 
   CreateDiet, Recipes, Calories, 
@@ -44,6 +45,7 @@ function App() {
                   <Route path="/calories" element={<Calories />} />
                   <Route path="/diet-plan" element={<DietPlan />} />
                   <Route path="/health-diary" element={<HealthDiary />} />
+                  <Route path="/settings" element={<Settings />} />
                   <Route path="/profile" element={<Profile />} />
                 </Route>
               </Route>

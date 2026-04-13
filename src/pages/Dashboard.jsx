@@ -1,12 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { FaTint, FaFire, FaPlus, FaUtensils, FaRobot, FaLeaf } from 'react-icons/fa';
+import TargetTracking from '../components/TargetTracking';
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
   
-  const waterProgress = 65; // Static value for now
+  const [waterTarget, setWaterTarget] = useState(2500);
+  const [waterCurrent, setWaterCurrent] = useState(0);
+  const waterProgress = (waterCurrent / waterTarget) * 100;
   const calorieProgress = 40; // Static value for now
+
+  // Load water data
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const savedWater = localStorage.getItem('suVerileri');
+    const savedTarget = localStorage.getItem('suHedefi');
+    
+    if (savedTarget) setWaterTarget(parseInt(savedTarget));
+    
+    if (savedWater) {
+      const parsed = JSON.parse(savedWater);
+      const todayData = parsed.find(d => d.date === today);
+      if (todayData) setWaterCurrent(todayData.amount);
+    }
+  }, []);
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -32,12 +50,12 @@ const Dashboard = () => {
           <div className="flex-1">
             <div className="flex justify-between items-end mb-2">
               <span className="text-gray-500 font-medium">Günlük Su</span>
-              <span className="text-blue-600 font-bold">1.8L / 2.5L</span>
+              <span className="text-blue-600 font-bold">{(waterCurrent/1000).toFixed(1)}L / {(waterTarget/1000).toFixed(1)}L</span>
             </div>
             <div className="h-3 bg-blue-50 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-blue-400 rounded-full transition-all duration-1000" 
-                style={{ width: `${waterProgress}%` }}
+                style={{ width: `${Math.min(100, waterProgress)}%` }}
               />
             </div>
           </div>
@@ -62,6 +80,9 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Target Tracking Section */}
+      <TargetTracking />
 
       {/* Quick Action Cards */}
       <section>
