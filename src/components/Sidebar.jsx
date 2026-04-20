@@ -46,9 +46,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       <aside className={`
         fixed top-0 left-0 h-full w-72 bg-white z-50 shadow-2xl transition-transform duration-300 ease-in-out transform
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:z-0 lg:shadow-none
+        lg:translate-x-0 lg:static lg:z-0 lg:shadow-none flex-shrink-0
       `}>
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
           {/* Header in Sidebar for Mobile */}
           <div className="flex items-center justify-between p-6 border-b lg:hidden">
             <div className="flex items-center space-x-2 text-green-600 font-bold text-xl">

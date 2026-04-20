@@ -34,3 +34,39 @@ body {
 #root {
   width: 100%;
 }
+
+/* Capacitor & Mobile Optimizations */
+@layer base {
+  :root {
+    --sat: env(safe-area-inset-top);
+    --sar: env(safe-area-inset-right);
+    --sab: env(safe-area-inset-bottom);
+    --sal: env(safe-area-inset-left);
+  }
+
+  html, body {
+    @apply overflow-hidden h-full w-full fixed;
+    /* Prevents "rubber band" scrolling on iOS */
+    overscroll-behavior-y: none;
+  }
+
+  #root {
+    @apply h-full w-full overflow-hidden flex flex-col;
+  }
+}
+
+/* Custom Scrollbar for all platforms */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}

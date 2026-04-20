@@ -7,9 +7,10 @@ import Dashboard from './pages/Dashboard';
 import BMICalculator from './pages/BMICalculator';
 import HealthDiary from './pages/HealthDiary';
 import Settings from './pages/Settings';
+import Recipes from './pages/Recipes';
 import VerifyEmail from './pages/VerifyEmail';
 import { 
-  CreateDiet, Recipes, Calories, 
+  CreateDiet, Calories, 
   DietPlan, Profile 
 } from './pages/PlaceholderPages';
 import ProtectedRoute from './components/ProtectedRoute';

@@ -25,7 +25,6 @@ const PlaceholderPage = ({ title }) => {
 };
 
 export const CreateDiet = () => <PlaceholderPage title="Diyet Oluştur" />;
-export const Recipes = () => <PlaceholderPage title="Yemek Tarifleri" />;
 export const Calories = () => <PlaceholderPage title="Kaç Kalori" />;
 export const DietPlan = () => <PlaceholderPage title="Diyet Planı" />;
 export const Profile = () => <PlaceholderPage title="Profil" />;

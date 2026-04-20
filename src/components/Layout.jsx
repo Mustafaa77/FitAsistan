@@ -16,12 +16,12 @@ const Layout = () => {
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         
         {/* Header - Fixed for Mobile, Sticky for Desktop if needed */}
         <header className="
-          bg-white shadow-sm h-16 flex items-center justify-between px-6 z-30
-          lg:h-20 lg:px-10
+          bg-white shadow-sm h-16 flex items-center justify-between px-6 z-20
+          lg:h-20 lg:px-10 sticky top-0 flex-shrink-0 pt-[env(safe-area-inset-top)]
         ">
           <div className="flex items-center space-x-4">
             {/* Hamburger Icon for Mobile */}
@@ -55,7 +55,7 @@ const Layout = () => {
         {/* Dynamic Content Rendering */}
         <main className="
           flex-1 overflow-y-auto p-6 bg-gray-50 
-          lg:p-10 safe-area-inset-bottom
+          lg:p-10 pb-[calc(1.5rem+env(safe-area-inset-bottom))]
         ">
           {/* Outlet for nested route components */}
           <Outlet />
@@ -69,9 +69,6 @@ const Layout = () => {
         }
         .safe-area-inset-bottom {
           padding-bottom: env(safe-area-inset-bottom);
-        }
-        main {
-          padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
         }
       `}</style>
     </div>
