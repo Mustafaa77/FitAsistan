@@ -11,14 +11,27 @@ Yapay zeka destekli, kişiselleştirilmiş diyet ve sağlıklı yaşam asistanı
   * Mobil UX: Safe area uyumluluğu ve 44px dokunmatik hedef alanları.
 * **Sıradaki Görev:** 7. Hafta - Yapay Zeka (AI) API Entegrasyonu.
 
-## 🗓️ 10 Haftalık İş Akışı
-* [x] **1. Hafta:** Proje Kurulumu, Giriş ve Kayıt Ekranları
-* [x] **2. Hafta:** Ana Sayfa (Menü) Tasarımı ve Veritabanı Bağlantısı (Supabase)
-* [x] **3. Hafta:** VKİ Hesaplama ve Kilo Takip (Grafik) Modülü
-* [x] **4. Hafta:** Sağlık Günlüğü ve Su Takip Sistemi
-* [x] **5. Hafta:** Hedef Takip Listesi
-* [x] **6. Hafta:** Yemek Tarifleri ve AI Chatbot Arayüzü
-* [ ] **7. Hafta:** Yapay Zeka (AI) API Entegrasyonu
-* [ ] **8. Hafta:** AI Destekli Diyet Listesi Oluşturucu
-* [ ] **9. Hafta:** Veri Senkronizasyonu (Veritabanı Kayıtları) ve Profil İşlemleri
-* [ ] **10. Hafta:** Mobil Çıktı (Capacitor) ve Final Testleri
+12 Haftalık İş Akışı
+[x] 1. Hafta: Proje Kurulumu, Giriş ve Kayıt Ekranları
+
+[x] 2. Hafta: Ana Sayfa (Menü) Tasarımı ve Veritabanı Bağlantısı (Supabase)
+
+[x] 3. Hafta: VKİ Hesaplama ve Kilo Takip (Grafik) Modülü
+
+[x] 4. Hafta: Sağlık Günlüğü ve Su Takip Sistemi
+
+[x] 5. Hafta: Hedef Takip Listesi
+
+[x] 6. Hafta: Yemek Tarifleri ve AI Chatbot Arayüzü (✅ Tamamlandı)
+
+[ ] 7. Hafta: Yapay Zeka (AI) API Entegrasyonu
+
+[ ] 8. Hafta: AI Destekli Diyet Listesi Oluşturucu
+
+[ ] 9. Hafta: Veri Senkronizasyonu (Veritabanı Kayıtları) ve Profil İşlemleri
+
+[ ] 10. Hafta: Mobil Çıktı (Capacitor) ve Performans Optimizasyonları
+
+[ ] 11. Hafta: Admin Paneli Tasarımı ve Yönetim İşlemleri
+
+[ ] 12. Hafta: Hata Analizi (QA), Final Testleri ve Sunum Hazırlığı
