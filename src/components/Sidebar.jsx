@@ -13,11 +13,11 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: <FaHome /> },
+    { name: 'Diyet Planım', path: '/diet-plan', icon: <FaCalendarAlt /> },
     { name: 'Diyet Oluştur', path: '/create-diet', icon: <FaUtensils /> },
     { name: 'Yemek Tarifleri', path: '/recipes', icon: <FaBook /> },
     { name: 'Kaç Kalori', path: '/calories', icon: <FaLeaf /> },
     { name: 'VKİ Hesaplama', path: '/bmi', icon: <FaCalculator /> },
-    { name: 'Diyet Planı', path: '/diet-plan', icon: <FaCalendarAlt /> },
     { name: 'Sağlık Günlüğü', path: '/health-diary', icon: <FaNotesMedical /> },
     { name: 'Ayarlar', path: '/settings', icon: <FaCog /> },
     { name: 'Profil', path: '/profile', icon: <FaUser /> },

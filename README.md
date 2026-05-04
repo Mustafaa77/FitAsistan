@@ -5,10 +5,10 @@ Yapay zeka destekli, kişiselleştirilmiş diyet ve sağlıklı yaşam asistanı
 ## 🚀 Güncel Durum (Şu An Buradayız)
 * **Mevcut Aşama:** 6. Hafta Tamamlandı
 * **Yapılanlar:** 
-  * Yemek Tarifleri Modülü: Responsive grid yapısı, kalori/süre/zorluk etiketleri ve arama fonksiyonu.
+  * Yemek Tarifleri Modülü: Responsive grid yapısı, kalori/süre/zorluk etiketleri ve gelişmiş arama (başlık + malzeme) fonksiyonu.
   * AI Chatbot Arayüzü: FAB (Floating Action Button) ve Bottom Sheet tabanlı modern mesajlaşma arayüzü.
   * Mesaj Geçmişi: LocalStorage tabanlı LRU Cache mesaj saklama sistemi.
-  * Mobil UX: Safe area uyumluluğu ve 44px dokunmatik hedef alanları.
+  * Mobil UX: Safe area uyumluluğu, 44px dokunmatik hedef alanları ve z-index hiyerarşisi düzenlendi.
 * **Sıradaki Görev:** 7. Hafta - Yapay Zeka (AI) API Entegrasyonu.
 
 12 Haftalık İş Akışı

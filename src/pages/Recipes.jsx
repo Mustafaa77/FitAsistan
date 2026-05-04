@@ -1,92 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { FaClock, FaFire, FaLayerGroup, FaTimes, FaUtensils, FaTrophy } from 'react-icons/fa';
+import { FaClock, FaFire, FaLayerGroup, FaTimes, FaUtensils, FaSearch } from 'react-icons/fa';
 import AssistantChat from '../components/AssistantChat';
-
-const recipesData = [
-  {
-    id: '1',
-    title: 'Izgara Tavuklu Fit Kinoa Salata',
-    calories: 420,
-    duration: '25 dk',
-    difficulty: 'easy',
-    imageURL: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80',
-    ingredients: [
-      '150g tavuk göğsü',
-      '1 su bardağı kinoa',
-      '1 adet avokado',
-      'Çeyrek demet maydanoz',
-      'Zeytinyağı ve limon sosu'
-    ],
-    instructions: [
-      'Kinoları yıkayıp haşlayın.',
-      'Tavukları ızgara tavada pişirip dilimleyin.',
-      'Avokadoyu ve maydanozu doğrayın.',
-      'Tüm malzemeleri bir kapta birleştirip sosu ekleyin.'
-    ]
-  },
-  {
-    id: '2',
-    title: 'Yulaflı ve Muzlu Protein Pankek',
-    calories: 310,
-    duration: '15 dk',
-    difficulty: 'easy',
-    imageURL: 'https://images.unsplash.com/photo-1528207776546-365bb710ee93?auto=format&fit=crop&w=800&q=80',
-    ingredients: [
-      '1 adet olgun muz',
-      '2 adet yumurta',
-      'Yarım su bardağı yulaf ezmesi',
-      '1 çay kaşığı tarçın',
-      '1 ölçek protein tozu (isteğe bağlı)'
-    ],
-    instructions: [
-      'Muzu bir kapta çatalla ezin.',
-      'Diğer tüm malzemeleri ekleyip pürüzsüz olana kadar karıştırın.',
-      'Yapışmaz tavada küçük yuvarlaklar halinde arkalı önlü pişirin.'
-    ]
-  },
-  {
-    id: '3',
-    title: 'Fırınlanmış Sebzeli Somon',
-    calories: 550,
-    duration: '35 dk',
-    difficulty: 'medium',
-    imageURL: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=800&q=80',
-    ingredients: [
-      '200g somon fileto',
-      '1 adet kabak',
-      '1 adet havuç',
-      '100g kuşkonmaz',
-      'Biberiye ve sarımsak'
-    ],
-    instructions: [
-      'Sebzeleri jülyen doğrayın.',
-      'Fırın tepsisine somonu ve sebzeleri yerleştirin.',
-      'Üzerine sarımsak ve biberiye ekleyip 200 derecede 25 dakika pişirin.'
-    ]
-  },
-  {
-    id: '4',
-    title: 'Chia Tohumlu Çilekli Puding',
-    calories: 190,
-    duration: '10 dk (+3 sa bekleme)',
-    difficulty: 'easy',
-    imageURL: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80',
-    ingredients: [
-      '3 yemek kaşığı chia tohumu',
-      '1 su bardağı badem sütü',
-      '5 adet çilek',
-      '1 tatlı kaşığı bal veya agave'
-    ],
-    instructions: [
-      'Chia tohumu ve sütü bir kavanozda karıştırın.',
-      'En az 3 saat veya bir gece boyunca buzdolabında bekletin.',
-      'Üzerine doğranmış çilekleri ekleyerek servis yapın.'
-    ]
-  }
-];
+import { recipesData } from '../pages/recipesData'
 
 const Recipes = () => {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Prevent background scroll when modal is open
   useEffect(() => {
@@ -109,64 +28,109 @@ const Recipes = () => {
     return () => window.removeEventListener('keydown', handleEsc);
   }, []);
 
+  // Filtering logic
+  const filteredRecipes = recipesData.filter(recipe => {
+    const searchLower = searchTerm.toLowerCase();
+    const titleMatch = recipe.title.toLowerCase().includes(searchLower);
+    const ingredientsMatch = recipe.ingredients.some(ing => ing.toLowerCase().includes(searchLower));
+    return titleMatch || ingredientsMatch;
+  });
+
   return (
-    <div className="max-w-7xl mx-auto px-4 pb-24 space-y-8 animate-fade-in relative">
-      <div className="pt-4">
-        <h1 className="text-3xl font-black text-gray-800">Sağlıklı Tarifler</h1>
-        <p className="text-gray-500 font-medium">AI destekli diyet dostu lezzetler</p>
-      </div>
-
-      {/* Grid Layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {recipesData.map((recipe) => (
-          <div 
-            key={recipe.id}
-            onClick={() => setSelectedRecipe(recipe)}
-            className="group bg-white rounded-[2rem] overflow-hidden shadow-lg border border-gray-50 hover:shadow-2xl hover:scale-[1.03] transition-all duration-300 cursor-pointer flex flex-col focus-within:ring-4 focus-within:ring-green-500/20"
-            tabIndex="0"
-          >
-            <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
-              <img 
-                src={recipe.imageURL} 
-                alt={recipe.title}
-                loading="lazy"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/400x300?text=Tarif+Görseli';
-                  e.target.className = 'w-full h-full object-cover opacity-50 bg-gray-200';
-                }}
-              />
-              <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm">
-                <FaFire className="text-orange-500 text-xs" />
-                <span className="text-xs font-black text-gray-800">{recipe.calories} kcal</span>
-              </div>
-            </div>
-
-            <div className="p-6 flex-1 flex flex-col space-y-4">
-              <h3 className="text-lg font-bold text-gray-800 leading-tight group-hover:text-green-600 transition-colors">
-                {recipe.title}
-              </h3>
-              <div className="flex items-center justify-between text-gray-500">
-                <div className="flex items-center gap-1.5 text-xs font-semibold">
-                  <FaClock className="text-gray-400" />
-                  <span>{recipe.duration}</span>
-                </div>
-                <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                  recipe.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
-                  recipe.difficulty === 'medium' ? 'bg-orange-100 text-orange-700' :
-                  'bg-red-100 text-red-700'
-                }`}>
-                  {recipe.difficulty === 'easy' ? 'Kolay' : recipe.difficulty === 'medium' ? 'Orta' : 'Zor'}
-                </div>
-              </div>
-            </div>
+    <>
+      <div className="max-w-7xl mx-auto px-4 pb-24 space-y-6 animate-fade-in relative">
+        <div className="pt-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black text-gray-800">Sağlıklı Tarifler</h1>
+            <p className="text-gray-500 font-medium">AI destekli diyet dostu lezzetler</p>
           </div>
-        ))}
+
+          {/* Search Bar */}
+          <div className="relative w-full md:max-w-md group">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <FaSearch className="text-gray-400 group-focus-within:text-green-500 transition-colors" />
+            </div>
+            <input
+              type="text"
+              placeholder="Tarif veya malzeme ara..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white border border-gray-200 rounded-2xl py-3 pl-11 pr-4 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all shadow-sm h-12"
+            />
+          </div>
+        </div>
+
+        {/* Grid Layout or Empty State */}
+        {filteredRecipes.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredRecipes.map((recipe) => (
+              <div 
+                key={recipe.id}
+                onClick={() => setSelectedRecipe(recipe)}
+                className="group bg-white rounded-[2rem] overflow-hidden shadow-lg border border-gray-50 hover:shadow-2xl hover:scale-[1.03] transition-all duration-300 cursor-pointer flex flex-col focus-within:ring-4 focus-within:ring-green-500/20"
+                tabIndex="0"
+              >
+                <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+                  <img 
+                    src={recipe.imageURL} 
+                    alt={recipe.title}
+                    loading="lazy"
+                    crossOrigin="anonymous"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    onError={(e) => {
+                      e.target.src = 'https://placehold.co/400x300/f3f4f6/6b7280?text=Tarif+Gorseli';
+                      e.target.className = 'w-full h-full object-cover opacity-50 bg-gray-200';
+                    }}
+                  />
+                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm">
+                    <FaFire className="text-orange-500 text-xs" />
+                    <span className="text-xs font-black text-gray-800">{recipe.calories} kcal</span>
+                  </div>
+                </div>
+
+                <div className="p-6 flex-1 flex flex-col space-y-4">
+                  <h3 className="text-lg font-bold text-gray-800 leading-tight group-hover:text-green-600 transition-colors">
+                    {recipe.title}
+                  </h3>
+                  <div className="flex items-center justify-between text-gray-500">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold">
+                      <FaClock className="text-gray-400" />
+                      <span>{recipe.duration}</span>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      recipe.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
+                      recipe.difficulty === 'medium' ? 'bg-orange-100 text-orange-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {recipe.difficulty === 'easy' ? 'Kolay' : recipe.difficulty === 'medium' ? 'Orta' : 'Zor'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 animate-fade-in">
+            <div className="bg-gray-100 p-6 rounded-full text-gray-300">
+              <FaSearch size={48} />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-xl font-bold text-gray-800">Sonuç Bulunamadı</h3>
+              <p className="text-gray-500 px-6">Aradığınız malzemelere veya isme sahip tarif bulunamadı.</p>
+            </div>
+            <button 
+              onClick={() => setSearchTerm('')}
+              className="text-green-600 font-bold hover:underline"
+            >
+              Aramayı Temizle
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Recipe Detail Modal */}
+      {/* Recipe Detail Modal - Rendered OUTSIDE animate-fade-in to avoid Stacking Context issues */}
       {selectedRecipe && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 animate-fade-in">
           <div 
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setSelectedRecipe(null)}
@@ -181,11 +145,14 @@ const Recipes = () => {
             </button>
 
             <div className="overflow-y-auto custom-scrollbar">
-              <div className="aspect-video w-full">
+              <div className="aspect-video w-full bg-gray-100">
                 <img 
                   src={selectedRecipe.imageURL} 
                   alt={selectedRecipe.title} 
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.src = 'https://placehold.co/800x450/f3f4f6/6b7280?text=Gorsel+Yuklenemedi';
+                  }}
                 />
               </div>
 
@@ -261,7 +228,7 @@ const Recipes = () => {
         .custom-scrollbar::-webkit-scrollbar-track { background: #f9fafb; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
       `}</style>
-    </div>
+    </>
   );
 };
 

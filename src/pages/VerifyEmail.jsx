@@ -12,7 +12,11 @@ const VerifyEmail = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check verification status periodically
+    if (!currentUser) {
+      const timeout = setTimeout(() => navigate('/login'), 3000);
+      return () => clearTimeout(timeout);
+    }
+
     const interval = setInterval(async () => {
       if (firebaseAuth.currentUser) {
         await firebaseAuth.currentUser.reload();
@@ -25,7 +29,7 @@ const VerifyEmail = () => {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [navigate]);
+  }, [navigate, currentUser]);
 
   const handleResendEmail = async () => {
     if (!firebaseAuth.currentUser) return;
@@ -42,39 +46,52 @@ const VerifyEmail = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
-      <div className="w-full max-w-md space-y-8 animate-fade-in">
-        <div className="flex flex-col items-center">
-          <div className="bg-green-100 p-6 rounded-full mb-6 text-green-600">
-            <FaEnvelope size={60} className="animate-pulse" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-800">E-postanı Doğrula</h1>
-          <p className="text-gray-500 mt-4 leading-relaxed">
-            Harika! Kaydını tamamlamak için <span className="font-semibold text-gray-800">{currentUser?.email}</span> adresine gönderdiğimiz doğrulama linkine tıkla.
-          </p>
-        </div>
-
-        <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100 text-blue-700 text-sm">
-          <p>E-postayı göremiyorsan lütfen "Spam" veya "Gereksiz" klasörlerini kontrol et.</p>
-        </div>
-
+  if (!currentUser) {
+    return (
+      <div className="h-full w-full bg-white flex items-center justify-center p-6 text-center">
         <div className="space-y-4">
-          <button
-            onClick={handleResendEmail}
-            disabled={loading}
-            className="w-full py-4 bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-100 flex items-center justify-center space-x-3 hover:bg-green-700 transition-all active:scale-95 disabled:opacity-50"
-          >
-            {loading ? <FaSpinner className="animate-spin" /> : <FaPaperPlane />}
-            <span>Yeniden Gönder</span>
-          </button>
-          
-          <button
-            onClick={() => navigate('/login')}
-            className="text-gray-500 font-medium hover:text-green-600 transition-colors"
-          >
-            Giriş Sayfasına Dön
-          </button>
+          <FaSpinner className="animate-spin text-green-600 text-4xl mx-auto" />
+          <p className="text-gray-500">Oturum açılmadı, giriş sayfasına yönlendiriliyorsunuz...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full w-full bg-white overflow-y-auto pb-safe">
+      <div className="min-h-full flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-full max-w-md space-y-8 animate-fade-in py-8">
+          <div className="flex flex-col items-center">
+            <div className="bg-green-100 p-6 rounded-full mb-6 text-green-600">
+              <FaEnvelope size={60} className="animate-pulse" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-800">E-postanı Doğrula</h1>
+            <p className="text-gray-500 mt-4 leading-relaxed">
+              Harika! Kaydını tamamlamak için <span className="font-semibold text-gray-800">{currentUser?.email}</span> adresine gönderdiğimiz doğrulama linkine tıkla.
+            </p>
+          </div>
+
+          <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100 text-blue-700 text-sm">
+            <p>E-postayı göremiyorsan lütfen "Spam" veya "Gereksiz" klasörlerini kontrol et.</p>
+          </div>
+
+          <div className="space-y-4">
+            <button
+              onClick={handleResendEmail}
+              disabled={loading}
+              className="w-full py-4 bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-100 flex items-center justify-center space-x-3 hover:bg-green-700 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {loading ? <FaSpinner className="animate-spin" /> : <FaPaperPlane />}
+              <span>Yeniden Gönder</span>
+            </button>
+            
+            <button
+              onClick={() => navigate('/login')}
+              className="text-gray-500 font-medium hover:text-green-600 transition-colors"
+            >
+              Giriş Sayfasına Dön
+            </button>
+          </div>
         </div>
       </div>
 

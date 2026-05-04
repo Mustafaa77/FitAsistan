@@ -53,6 +53,13 @@ body {
   #root {
     @apply h-full w-full overflow-hidden flex flex-col;
   }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
 }
 
 /* Custom Scrollbar for all platforms */
