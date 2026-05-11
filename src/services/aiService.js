@@ -176,9 +176,23 @@ export const generateDietPlan = async (userData) => {
 
     return await callAIWithRetry(async () => {
       const model = getModel();
-      // Token tasarrufu için prompt'u daha kısa ve net hale getirdik
-      const prompt = `DIET_REQ: Age:${age}, H:${height}, W:${weight}, G:${gender}, Act:${activityLevel}, Goal:${goal}. 
-      Create 7-day plan. Return ONLY pure JSON array. No intro/outro.`;
+      const prompt = `Lütfen aşağıdaki bilgilere sahip kullanıcı için 7 günlük detaylı bir diyet planı oluştur. 
+    Kullanıcı Bilgileri:
+    - Yaş: ${userData.age}
+    - Boy: ${userData.height} cm
+    - Kilo: ${userData.weight} kg
+    - Cinsiyet: ${userData.gender === 'male' ? 'Erkek' : 'Kadın'}
+    - Aktivite Seviyesi: ${userData.activityLevel}
+    - Hedef: ${userData.goal}
+
+    ÖNEMLİ KURALLAR:
+    1. Yanıtın SADECE VE SADECE geçerli bir JSON array olmalıdır.
+    2. JSON array içinde tam olarak 7 adet obje (her gün için bir tane) bulunmalıdır.
+    3. Her obje şu yapıda olmalıdır: {"day": "Gün Adı", "meals": {"breakfast": "...", "lunch": "...", "dinner": "...", "snacks": ["...", "..."]}, "totalCalories": sayı}
+    4. "totalCalories" değeri yaklaşık ${calculateDailyCalories(userData.weight, userData.height, userData.age, userData.gender, userData.activityLevel, userData.goal).target} kcal olmalıdır.
+    5. JSON dışında hiçbir metin, açıklama veya markdown etiketi ekleme. 
+    6. JSON'ı asla yarıda kesme, her günü kısa ve öz tutarak 7 günü de tamamla.
+    7. JSON anahtarları ve değerleri çift tırnak içinde olmalıdır.`;
 
       const result = await model.generateContent(prompt);
       const text = result.response.text();

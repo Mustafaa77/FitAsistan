@@ -1,37 +1,38 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FaTint, FaMoon, FaPlus, FaSave, FaChartLine, 
-  FaCalendarAlt, FaCheckCircle, FaHistory, FaClock
+  FaCalendarAlt, FaCheckCircle, FaHistory, FaClock, FaFire
 } from 'react-icons/fa';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer 
 } from 'recharts';
 import toast from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
+import { supabaseService } from '../services/supabaseService';
 
 /**
- * HealthDiary Component - Week 4 Implementation
- * Features: Water Tracking, Sleep Tracking, Mood & Daily Notes
+ * HealthDiary Component - Week 9 Implementation
+ * Migrated from localStorage to Supabase
  */
 const HealthDiary = () => {
-  // Tab Management
-  const [activeTab, setActiveTab] = useState('water'); // 'water' or 'sleep'
+  const { currentUser } = useAuth();
+  const [activeTab, setActiveTab] = useState('water');
+  const [loading, setLoading] = useState(true);
   const today = new Date().toISOString().split('T')[0];
 
-  // --- WATER TRACKING STATE ---
+  // --- STATES ---
   const [waterAmount, setWaterAmount] = useState(0);
   const [waterTarget, setWaterTarget] = useState(2500);
-
-  // --- SLEEP TRACKING STATE ---
-  const [sleepDate, setSleepDate] = useState(today);
+  const [calorieAmount, setCalorieAmount] = useState(0);
+  const [calorieTarget, setCalorieTarget] = useState(2100);
+  const [calorieInput, setCalorieInput] = useState('');
+  const [sleepDate, setSleepDate] = useState(new Date().toISOString().split('T')[0]);
   const [sleepHours, setSleepHours] = useState('');
   const [sleepHistory, setSleepHistory] = useState([]);
-
-  // --- MOOD & JOURNAL STATE ---
   const [selectedMood, setSelectedMood] = useState('😐');
   const [dailyNote, setDailyNote] = useState('');
 
-  // Mood options
   const moods = [
     { emoji: '😴', label: 'Yorgun' },
     { emoji: '😰', label: 'Stresli' },
@@ -40,133 +41,109 @@ const HealthDiary = () => {
     { emoji: '⚡', label: 'Enerjik' }
   ];
 
-  // --- INITIAL DATA LOAD (Defensive Programming) ---
+  // --- DATA FETCHING ---
   useEffect(() => {
-    try {
-      // Water Target from Settings
-      const savedTarget = localStorage.getItem('suHedefi');
-      if (savedTarget) {
-        setWaterTarget(parseInt(savedTarget));
-      }
+    if (!currentUser) return;
 
-      // Water Data
-      const savedWater = localStorage.getItem('suVerileri');
-      if (savedWater) {
-        const parsed = JSON.parse(savedWater);
-        const todayData = parsed.find(d => d.date === today);
-        if (todayData) setWaterAmount(todayData.amount);
-        else setWaterAmount(0);
-      } else {
-        setWaterAmount(0);
-      }
+    const fetchAllData = async () => {
+      try {
+        setLoading(true);
+        const [profile, water, healthLog, sleepLogs, calorieLog, activePlan] = await Promise.all([
+          supabaseService.getProfile(currentUser.uid),
+          supabaseService.getWaterLogs(currentUser.uid, today),
+          supabaseService.getHealthLog(currentUser.uid, today),
+          supabaseService.getSleepLogs(currentUser.uid),
+          supabaseService.getCalorieLog(currentUser.uid, today),
+          supabaseService.getActiveDietPlan(currentUser.uid)
+        ]);
 
-      // Sleep Data
-      const savedSleep = localStorage.getItem('uykuVerileri');
-      if (savedSleep) {
-        setSleepHistory(JSON.parse(savedSleep));
-      } else {
-        setSleepHistory([]);
-      }
+        if (profile) setWaterTarget(profile.water_target || 2500);
+        if (water) setWaterAmount(water.amount || 0);
+        if (calorieLog) setCalorieAmount(calorieLog.amount || 0);
+        
+        // Calorie target from active plan or profile
+        const target = activePlan?.plan_data?.info?.dailyCalories || profile?.daily_calorie_target || 2100;
+        setCalorieTarget(target);
 
-      // Mood Data
-      const savedMood = localStorage.getItem('duyguVerileri');
-      if (savedMood) {
-        const parsed = JSON.parse(savedMood);
-        const todayMood = parsed.find(d => d.date === today);
-        if (todayMood) {
-          setSelectedMood(todayMood.mood);
-          setDailyNote(todayMood.note || '');
-        } else {
-          setSelectedMood('😐');
-          setDailyNote('');
+        if (healthLog) {
+          setSelectedMood(healthLog.mood || '😐');
+          setDailyNote(healthLog.note || '');
         }
+        if (sleepLogs) {
+          // Format for chart
+          const formattedSleep = sleepLogs.map(s => ({
+            ...s,
+            displayDate: new Date(s.date).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })
+          })).reverse();
+          setSleepHistory(formattedSleep);
+        }
+      } catch (error) {
+        console.error('HealthDiary fetch error:', error);
+        toast.error('Veriler yüklenirken bir hata oluştu.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
+  }, [currentUser, today]);
+
+  // --- ACTIONS ---
+  const addWater = async (ml) => {
+    const newAmount = waterAmount + ml;
+    setWaterAmount(newAmount);
+    
+    try {
+      await supabaseService.updateWaterLog(currentUser.uid, today, newAmount);
+      
+      if (newAmount >= waterTarget && waterAmount < waterTarget) {
+        toast.success('Harika! Günlük su hedefine ulaştın!', { icon: '💧' });
       } else {
-        setSelectedMood('😐');
-        setDailyNote('');
+        toast.success(`${ml}ml eklendi`, { duration: 1000, icon: '💧' });
       }
     } catch (error) {
-      console.error('Veri yükleme hatası:', error);
-      toast.error('Veriler yüklenirken bir sorun oluştu.');
-      // Reset states on error
-      setWaterAmount(0);
-      setSleepHistory([]);
-      setSelectedMood('😐');
-      setDailyNote('');
-    }
-  }, [today]);
-
-  // --- PERSISTENCE HELPERS ---
-  const saveWaterToLocal = (amount) => {
-    try {
-      const saved = localStorage.getItem('suVerileri');
-      let data = saved ? JSON.parse(saved) : [];
-      const index = data.findIndex(d => d.date === today);
-      
-      if (index > -1) {
-        data[index].amount = amount;
-      } else {
-        data.push({ date: today, amount });
-      }
-      
-      localStorage.setItem('suVerileri', JSON.stringify(data));
-    } catch (e) {
-      console.error('Su verisi kaydedilemedi:', e);
+      toast.error('Su verisi kaydedilemedi.');
     }
   };
 
-  const handleMoodSave = () => {
+  const addCalories = async (e) => {
+    e.preventDefault();
+    const amountToAdd = parseInt(calorieInput);
+    if (isNaN(amountToAdd) || amountToAdd <= 0) {
+      toast.error('Lütfen geçerli bir kalori miktarı girin.');
+      return;
+    }
+
+    const newAmount = calorieAmount + amountToAdd;
+    setCalorieAmount(newAmount);
+    setCalorieInput('');
+
     try {
-      const saved = localStorage.getItem('duyguVerileri');
-      let data = saved ? JSON.parse(saved) : [];
-      const index = data.findIndex(d => d.date === today);
-      
-      const newEntry = { 
-        date: today, 
-        mood: selectedMood, 
-        note: dailyNote 
-      };
-      
-      if (index > -1) {
-        data[index] = newEntry;
-      } else {
-        data.push(newEntry);
-      }
-      
-      localStorage.setItem('duyguVerileri', JSON.stringify(data));
-      toast.success('Duygu durumu ve notunuz kaydedildi!', {
-        icon: '✅',
-        style: { borderRadius: '12px', background: '#16a34a', color: '#fff' }
+      await supabaseService.updateCalorieLog(currentUser.uid, today, newAmount);
+      toast.success(`${amountToAdd} kcal eklendi`, { icon: '🔥' });
+    } catch (error) {
+      toast.error('Kalori verisi kaydedilemedi.');
+    }
+  };
+
+  const handleMoodSave = async () => {
+    try {
+      await supabaseService.updateHealthLog(currentUser.uid, today, {
+        mood: selectedMood,
+        note: dailyNote
       });
-    } catch (e) {
+      toast.success('Duygu durumu ve notunuz kaydedildi!');
+    } catch (error) {
       toast.error('Kaydedilirken bir hata oluştu.');
     }
   };
 
-  // --- WATER ACTIONS ---
-  const addWater = (ml) => {
-    // Limit progress to target + some buffer, but logic follows user input
-    const newAmount = waterAmount + ml;
-    setWaterAmount(newAmount);
-    saveWaterToLocal(newAmount);
-    
-    if (newAmount >= waterTarget && waterAmount < waterTarget) {
-      toast.success('Harika! Günlük su hedefine ulaştın!', {
-        icon: '💧',
-        duration: 4000,
-      });
-    } else {
-      toast.success(`${ml}ml eklendi`, { duration: 1000, icon: '💧' });
-    }
-  };
-
-  // --- SLEEP ACTIONS ---
-  const handleSleepSubmit = (e) => {
+  const handleSleepSubmit = async (e) => {
     e.preventDefault();
     const hours = parseFloat(sleepHours);
 
-    // Validations
     if (!sleepDate || sleepDate > today) {
-      toast.error('Geçerli bir tarih seçmelisiniz (Gelecek tarih seçilemez).');
+      toast.error('Geçerli bir tarih seçmelisiniz.');
       return;
     }
     if (isNaN(hours) || hours < 0 || hours > 24) {
@@ -175,28 +152,36 @@ const HealthDiary = () => {
     }
 
     try {
-      const displayDate = new Date(sleepDate).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' });
-      const newRecord = {
-        date: sleepDate,
-        displayDate: displayDate,
-        hours: hours
-      };
-
-      // Filter out existing record for same date and add new one
-      const updatedHistory = [...sleepHistory.filter(h => h.date !== sleepDate), newRecord]
-        .sort((a, b) => new Date(a.date) - new Date(b.date))
-        .slice(-7); // Keep last 7 days
-
-      setSleepHistory(updatedHistory);
-      localStorage.setItem('uykuVerileri', JSON.stringify(updatedHistory));
+      const selectedDateObj = new Date(sleepDate);
+      const isoDate = selectedDateObj.toISOString().split('T')[0];
+      
+      await supabaseService.addSleepLog(currentUser.uid, isoDate, hours);
+      
+      // Refresh sleep history
+      const sleepLogs = await supabaseService.getSleepLogs(currentUser.uid);
+      const formattedSleep = sleepLogs.map(s => ({
+        ...s,
+        displayDate: new Date(s.date).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      })).reverse();
+      
+      setSleepHistory(formattedSleep);
       setSleepHours('');
       toast.success('Uyku verisi başarıyla eklendi!');
-    } catch (e) {
-      toast.error('Uyku verisi kaydedilirken hata oluştu.');
+    } catch (error) {
+      console.error('Sleep log error:', error);
+      toast.error('Uyku verisi kaydedilemedi.');
     }
   };
 
-  // --- COMPUTED VALUES ---
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh]">
+        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-gray-500">Günlük verileri yükleniyor...</p>
+      </div>
+    );
+  }
+  
   const waterPercentage = Math.min(100, (waterAmount / waterTarget) * 100);
   const isTargetMet = waterAmount >= waterTarget;
 
@@ -227,41 +212,30 @@ const HealthDiary = () => {
 
       {activeTab === 'water' ? (
         <div className="space-y-6 px-4">
-          {/* Water Tracker Card */}
-          <div className={`bg-white p-8 rounded-[2rem] shadow-sm border-2 transition-all duration-500 ${
-            isTargetMet ? 'border-green-400 bg-green-50/20' : 'border-gray-50'
-          }`}>
-            <div className="flex justify-between items-end mb-8">
+          {/* Water Tracker Section */}
+          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-50 space-y-8">
+            <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-3xl font-black text-gray-800 mb-1">Günlük Su</h2>
-                <p className="text-gray-500 font-medium flex items-center gap-1">
-                  <FaCheckCircle className={isTargetMet ? 'text-green-500' : 'text-gray-300'} />
-                  Hedef: {waterTarget}ml
-                </p>
+                <h2 className="text-3xl font-black text-gray-800 tracking-tight">Su Takibi</h2>
+                <p className="text-gray-400 text-sm font-medium">Günlük hedefine ulaşmak için su içmeyi unutma!</p>
               </div>
-              <div className="text-right">
-                <div className={`text-4xl font-black transition-colors duration-500 ${isTargetMet ? 'text-green-600' : 'text-green-700'}`}>
-                  {waterAmount}
-                </div>
-                <div className="text-gray-400 font-bold uppercase text-xs tracking-widest">Mililitre</div>
+              <div className="bg-green-50 p-4 rounded-2xl text-green-600 shadow-sm">
+                <FaTint size={32} />
               </div>
             </div>
 
-            {/* Horizontal Animated Progress Bar */}
-            <div className="relative h-12 bg-gray-100 rounded-2xl overflow-hidden mb-10 border border-gray-200">
-              <div 
-                className={`h-full transition-all duration-1000 ease-out flex items-center justify-center relative ${
-                  isTargetMet ? 'bg-green-500' : 'bg-green-600'
-                }`}
-                style={{ width: `${waterPercentage}%` }}
-              >
-                {waterPercentage > 10 && (
-                  <span className="text-white font-black text-sm drop-shadow-md">
-                    %{waterPercentage.toFixed(0)}
-                  </span>
-                )}
-                {/* Glossy effect */}
-                <div className="absolute top-0 left-0 w-full h-1/2 bg-white/10" />
+            {/* Circular Progress (Simplified for UI) */}
+            <div className="relative flex items-center justify-center py-4">
+              <div className="w-48 h-48 rounded-full border-[12px] border-gray-50 flex items-center justify-center relative overflow-hidden shadow-inner">
+                {/* Progress Fill */}
+                <div 
+                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-green-500/20 to-green-600/30 transition-all duration-1000 ease-out"
+                  style={{ height: `${waterPercentage}%` }}
+                />
+                <div className="relative z-10 text-center">
+                  <span className="text-4xl font-black text-green-600">{(waterAmount/1000).toFixed(1)}</span>
+                  <span className="text-gray-400 font-bold ml-1 text-lg">/ {(waterTarget/1000).toFixed(1)}L</span>
+                </div>
               </div>
             </div>
 
@@ -291,6 +265,50 @@ const HealthDiary = () => {
                 <span className="text-white font-black text-2xl">500ml</span>
               </button>
             </div>
+          </div>
+
+          {/* Calorie Tracking Section - NEW */}
+          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-50 space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-black text-gray-800 tracking-tight">Kalori Takibi</h2>
+                <p className="text-gray-400 text-sm font-medium">Yediklerini kaydederek hedefine sadık kal.</p>
+              </div>
+              <div className="bg-orange-50 p-4 rounded-2xl text-orange-600 shadow-sm">
+                <FaFire size={32} />
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-end">
+                <span className="text-gray-500 font-black uppercase text-xs tracking-widest">Günlük İlerleme</span>
+                <span className="text-orange-600 font-black text-xl">{calorieAmount} / {calorieTarget} kcal</span>
+              </div>
+              <div className="h-6 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 p-1">
+                <div 
+                  className="h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-xl transition-all duration-1000 ease-out shadow-lg"
+                  style={{ width: `${Math.min(100, (calorieAmount / calorieTarget) * 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Quick Calorie Add */}
+            <form onSubmit={addCalories} className="flex gap-4">
+              <input 
+                type="number"
+                value={calorieInput}
+                onChange={(e) => setCalorieInput(e.target.value)}
+                placeholder="Örn: 350 kcal"
+                className="flex-1 h-16 px-6 bg-gray-50 border-2 border-gray-50 rounded-2xl focus:ring-4 focus:ring-orange-100 focus:border-orange-500 focus:bg-white outline-none transition-all font-black text-gray-700 text-lg shadow-inner"
+              />
+              <button 
+                type="submit"
+                className="bg-orange-600 text-white p-5 rounded-2xl shadow-xl shadow-orange-100 hover:bg-orange-700 active:scale-95 transition-all flex items-center justify-center min-w-[64px]"
+              >
+                <FaPlus size={24} />
+              </button>
+            </form>
           </div>
 
           {/* Mood & Journal Section */}

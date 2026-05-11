@@ -36,8 +36,18 @@ const AssistantChat = () => {
   }, [isOpen]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   };
+
+  useEffect(() => {
+    const handleOpenChat = () => {
+      setIsOpen(true);
+    };
+    window.addEventListener('openAssistantChat', handleOpenChat);
+    return () => window.removeEventListener('openAssistantChat', handleOpenChat);
+  }, []);
 
   useEffect(() => {
     if (isOpen) scrollToBottom();

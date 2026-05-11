@@ -30,5 +30,9 @@ dist-ssr
 .env.test.local
 .env.production.local
 
+# Capacitor (Week 10) - 9. hafta commiti için geçici olarak devre dışı
+/android/
+/capacitor.config.json
+
 AI_REHBER.md
 TEKNIK_RAPOR.md

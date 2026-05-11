@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 import { FaBars, FaLeaf } from 'react-icons/fa';
 import Sidebar from './Sidebar';
+import AssistantChat from './AssistantChat';
 
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -42,10 +43,10 @@ const Layout = () => {
               </button>
               
               {/* Logo and Name for Mobile Header */}
-              <div className="flex items-center space-x-2 text-green-600 font-bold text-xl lg:hidden">
+              <Link to="/dashboard" className="flex items-center space-x-2 text-green-600 font-bold text-xl lg:hidden">
                 <FaLeaf />
                 <span>FitAsistan</span>
-              </div>
+              </Link>
 
               {/* Title/Section Placeholder for Desktop */}
               <div className="hidden lg:block">
@@ -66,6 +67,9 @@ const Layout = () => {
             <Outlet />
           </div>
         </main>
+        
+        {/* Floating AI Assistant Chatbot */}
+        <AssistantChat />
       </div>
 
       {/* Global CSS for Capacitor safe-area-inset support */}

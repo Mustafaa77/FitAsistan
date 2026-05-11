@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaUtensils, FaFire, FaUser, FaRuler, FaWeight, FaWalking, FaBullseye, FaSpinner, FaCheck, FaTimes } from 'react-icons/fa';
 import { generateDietPlan, calculateDailyCalories } from '../services/aiService';
 import toast from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
+import { supabaseService } from '../services/supabaseService';
 
 const DietGenerator = () => {
+  const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
     age: '',
     height: '',
@@ -16,6 +19,27 @@ const DietGenerator = () => {
   const [dietPlan, setDietPlan] = useState(null);
   const [calorieInfo, setCalorieInfo] = useState(null);
   const [selectedDay, setSelectedDay] = useState(0);
+
+  // Pre-fill form if profile exists
+  useEffect(() => {
+    if (!currentUser) return;
+    const loadProfile = async () => {
+      try {
+        const profile = await supabaseService.getProfile(currentUser.uid);
+        if (profile) {
+          setFormData(prev => ({
+            ...prev,
+            age: profile.age || '',
+            height: profile.height || '',
+            weight: profile.current_weight || ''
+          }));
+        }
+      } catch (e) {
+        console.error('Profile load error:', e);
+      }
+    };
+    loadProfile();
+  }, [currentUser]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -32,60 +56,63 @@ const DietGenerator = () => {
       return;
     }
 
-    if (parseInt(age) < 10 || parseInt(age) > 100) {
-      toast.error('Geçerli bir yaş girin (10-100)');
-      return;
-    }
-
-    if (parseInt(height) < 100 || parseInt(height) > 250) {
-      toast.error('Geçerli bir boy girin (100-250 cm)');
-      return;
-    }
-
-    if (parseFloat(weight) < 30 || parseFloat(weight) > 300) {
-      toast.error('Geçerli bir kilo girin (30-300 kg)');
-      return;
-    }
-
     setIsLoading(true);
     setDietPlan(null);
 
-    const calculatedCalories = calculateDailyCalories(
-      parseFloat(weight),
-      parseInt(height),
-      parseInt(age),
-      gender,
-      activityLevel,
-      goal
-    );
-    setCalorieInfo(calculatedCalories);
+    try {
+      const calculatedCalories = calculateDailyCalories(
+        parseFloat(weight),
+        parseInt(height),
+        parseInt(age),
+        gender,
+        activityLevel,
+        goal
+      );
+      setCalorieInfo(calculatedCalories);
 
-    const result = await generateDietPlan({
-      age: parseInt(age),
-      height: parseInt(height),
-      weight: parseFloat(weight),
-      gender,
-      activityLevel,
-      goal
-    });
+      const result = await generateDietPlan({
+        age: parseInt(age),
+        height: parseInt(height),
+        weight: parseFloat(weight),
+        gender,
+        activityLevel,
+        goal
+      });
 
-    setIsLoading(false);
+      setIsLoading(false); // Stop loading before success processing
 
-    if (result.success && result.data) {
-      setDietPlan(result.data);
-      // Diyet planını kalıcı olarak kaydet
-      localStorage.setItem('kayitliDiyetPlani', JSON.stringify({
-        plan: result.data,
-        info: calculatedCalories,
-        user: formData,
-        tarih: new Date().toISOString()
-      }));
-      toast.success('Diyet planınız hazır!');
-      
-      // Kullanıcıyı görüntüleme sayfasına yönlendir (opsiyonel)
-      // navigate('/diet-plan');
-    } else {
-      toast.error(result.error || 'Diyet oluşturulamadı');
+      if (result.success && result.data) {
+        // AI bazen 7 günden az dönebilir veya format hatalı olabilir, kontrol edelim
+        if (!Array.isArray(result.data)) {
+          throw new Error('AI yanıtı beklenen formatta değil.');
+        }
+        
+        setDietPlan(result.data);
+        
+        // Save to Supabase
+        await supabaseService.saveDietPlan(currentUser.uid, {
+          plan: result.data,
+          info: calculatedCalories,
+          user: formData,
+          tarih: new Date().toISOString()
+        });
+
+        // Also update profile calories target
+        await supabaseService.updateProfile(currentUser.uid, {
+          daily_calorie_target: calculatedCalories.target,
+          age: parseInt(age),
+          height: parseInt(height),
+          current_weight: parseFloat(weight)
+        });
+
+        toast.success('Diyet planınız hazır ve kaydedildi!');
+      } else {
+        toast.error(result.error || 'Diyet oluşturulamadı. Lütfen tekrar deneyin.');
+      }
+    } catch (error) {
+      console.error('Diet generation error:', error);
+      setIsLoading(false);
+      toast.error('AI şu an çok yoğun veya bir hata oluştu. Lütfen birazdan tekrar deneyin.');
     }
   };
 

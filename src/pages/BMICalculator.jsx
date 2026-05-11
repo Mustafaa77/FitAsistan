@@ -8,9 +8,17 @@ import {
   Tooltip, ResponsiveContainer, ReferenceLine 
 } from 'recharts';
 import toast from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
+import { supabaseService } from '../services/supabaseService';
 
 const BMICalculator = () => {
-  const [activeTab, setActiveTab] = useState('bmi'); // 'bmi' or 'tracker'
+  const { currentUser } = useAuth();
+    const [activeTab, setActiveTab] = useState('bmi'); // 'bmi' or 'tracker'
+    const [loading, setLoading] = useState(true);
+
+    const saveToLocal = (data) => {
+        console.warn('saveToLocal is deprecated, using Supabase');
+    };
   
   // BMI State
   const [height, setHeight] = useState('');
@@ -24,32 +32,46 @@ const BMICalculator = () => {
   const [currentWeightInput, setCurrentWeightInput] = useState('');
   const [currentDateInput, setCurrentDateInput] = useState(new Date().toISOString().split('T')[0]);
 
-  // Load data from localStorage
+  // Load data from Supabase
   useEffect(() => {
-    const savedData = localStorage.getItem('fitasistan_health_data');
-    if (savedData) {
-      const parsed = JSON.parse(savedData);
-      setHeight(parsed.height || '');
-      setAge(parsed.age || '');
-      setTargetWeight(parsed.targetWeight || '');
-      setWeightHistory(parsed.weightHistory || []);
-      if (parsed.weightHistory?.length > 0) {
-        setWeight(parsed.weightHistory[parsed.weightHistory.length - 1].weight);
+    if (!currentUser) return;
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [profile, history] = await Promise.all([
+          supabaseService.getProfile(currentUser.uid),
+          supabaseService.getWeightHistory(currentUser.uid)
+        ]);
+
+        if (profile) {
+          setHeight(profile.height || '');
+          setAge(profile.age || '');
+          setTargetWeight(profile.target_weight || '');
+        }
+
+        if (history && history.length > 0) {
+          const formattedHistory = history.map(h => ({
+            ...h,
+            displayDate: new Date(h.date).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })
+          })).reverse();
+          setWeightHistory(formattedHistory);
+          setWeight(history[0].weight.toString());
+        }
+      } catch (error) {
+        console.error('BMI fetch error:', error);
+        toast.error('Veriler yüklenirken hata oluştu.');
+      } finally {
+        setLoading(false);
       }
-    }
-  }, []);
+    };
 
-  // Save data to localStorage
-  const saveToLocal = (newData) => {
-    const existingData = JSON.parse(localStorage.getItem('fitasistan_health_data') || '{}');
-    const merged = { ...existingData, ...newData };
-    localStorage.setItem('fitasistan_health_data', JSON.stringify(merged));
-  };
+    fetchData();
+  }, [currentUser]);
 
-  const calculateBMI = (e) => {
+  const calculateBMI = async (e) => {
     e.preventDefault();
     
-    // Form validasyonu
     const h = parseFloat(height);
     const w = parseFloat(weight);
     const a = parseInt(age);
@@ -71,11 +93,19 @@ const BMICalculator = () => {
     const bmi = (w / (heightInMeters * heightInMeters)).toFixed(1);
     setBmiResult(bmi);
     
-    saveToLocal({ height: h, age: a });
-    toast.success('VKİ Hesaplandı!');
+    try {
+      await supabaseService.updateProfile(currentUser.uid, {
+        height: h,
+        age: a,
+        current_weight: w
+      });
+      toast.success('VKİ Hesaplandı ve profiliniz güncellendi!');
+    } catch (error) {
+      toast.error('Profil güncellenemedi.');
+    }
   };
 
-  const addWeightRecord = (e) => {
+  const addWeightRecord = async (e) => {
     e.preventDefault();
     const w = parseFloat(currentWeightInput);
     
@@ -89,38 +119,41 @@ const BMICalculator = () => {
       return;
     }
 
-    const selectedDate = new Date(currentDateInput);
-    const formattedDate = selectedDate.toLocaleDateString('tr-TR', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric' 
-    }).replace(/\./g, '/'); // Convert DD.MM.YYYY to DD/MM/YYYY
-
-    const newRecord = {
-      date: formattedDate,
-      weight: w,
-      fullDate: selectedDate.toISOString()
-    };
-
-    // Tarihe göre sıralı tut ve son 10 kaydı al
-    const updatedHistory = [...weightHistory, newRecord]
-      .sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate))
-      .slice(-10);
-
-    setWeightHistory(updatedHistory);
-    setWeight(w.toString());
-    setCurrentWeightInput('');
-    saveToLocal({ weightHistory: updatedHistory });
-    toast.success('Kilo kaydı eklendi!');
+    try {
+      const selectedDate = new Date(currentDateInput);
+      const isoDate = selectedDate.toISOString().split('T')[0];
+      
+      await supabaseService.addWeightLog(currentUser.uid, isoDate, w);
+      
+      // Update local state
+      const history = await supabaseService.getWeightHistory(currentUser.uid);
+      const formattedHistory = history.map(h => ({
+        ...h,
+        displayDate: new Date(h.date).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      })).reverse();
+      
+      setWeightHistory(formattedHistory);
+      setWeight(w.toString());
+      setCurrentWeightInput('');
+      toast.success('Kilo kaydı eklendi!');
+    } catch (error) {
+      console.error('Weight record error:', error);
+      toast.error('Kilo kaydı eklenemedi.');
+    }
   };
 
   const clearWeightHistory = () => {
-    if (window.confirm('Kilo geçmişinizi tamamen silmek istediğinize emin misiniz?')) {
-      setWeightHistory([]);
-      saveToLocal({ weightHistory: [] });
-      toast.success('Kilo geçmişi temizlendi.');
-    }
+    toast.error('Bu özellik henüz Supabase üzerinde aktif değil.');
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh]">
+        <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-gray-500">VKİ verileri yükleniyor...</p>
+      </div>
+    );
+  }
 
   const getBmiStatus = (bmi) => {
     if (bmi < 18.5) return { label: 'Zayıf', color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-200', advice: 'Sağlıklı bir şekilde kilo almak için beslenme uzmanına danışabilirsiniz.' };
@@ -326,9 +359,15 @@ const BMICalculator = () => {
                   <input 
                     type="number"
                     value={targetWeight}
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       setTargetWeight(e.target.value);
-                      saveToLocal({ targetWeight: e.target.value });
+                      try {
+                        await supabaseService.updateProfile(currentUser.uid, {
+                          target_weight: parseFloat(e.target.value)
+                        });
+                      } catch (err) {
+                        console.error('Target weight update error:', err);
+                      }
                     }}
                     placeholder="Hedef kg"
                     className="w-full bg-white/20 border border-white/30 rounded-2xl h-14 px-4 text-white placeholder:text-white/50 outline-none focus:bg-white/30 transition-all font-bold text-2xl"

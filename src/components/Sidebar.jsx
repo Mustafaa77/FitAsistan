@@ -20,7 +20,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     { name: 'VKİ Hesaplama', path: '/bmi', icon: <FaCalculator /> },
     { name: 'Sağlık Günlüğü', path: '/health-diary', icon: <FaNotesMedical /> },
     { name: 'Ayarlar', path: '/settings', icon: <FaCog /> },
-    { name: 'Profil', path: '/profile', icon: <FaUser /> },
   ];
 
   const handleLogout = async () => {
@@ -51,20 +50,20 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         <div className="flex flex-col h-full pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
           {/* Header in Sidebar for Mobile */}
           <div className="flex items-center justify-between p-6 border-b lg:hidden">
-            <div className="flex items-center space-x-2 text-green-600 font-bold text-xl">
+            <Link to="/dashboard" onClick={() => isOpen && toggleSidebar()} className="flex items-center space-x-2 text-green-600 font-bold text-xl">
               <FaLeaf />
               <span>FitAsistan</span>
-            </div>
+            </Link>
             <button onClick={toggleSidebar} className="text-gray-500">
               <FaTimes size={24} />
             </button>
           </div>
 
           {/* Desktop Logo Placeholder */}
-          <div className="hidden lg:flex items-center space-x-2 p-8 text-green-600 font-bold text-2xl border-b">
+          <Link to="/dashboard" className="hidden lg:flex items-center space-x-2 p-8 text-green-600 font-bold text-2xl border-b hover:bg-gray-50 transition-colors">
             <FaLeaf />
             <span>FitAsistan</span>
-          </div>
+          </Link>
 
           {/* Navigation Links */}
           <nav className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
@@ -72,13 +71,16 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                onClick={() => window.innerWidth < 1024 && toggleSidebar()}
+                onClick={() => {
+                  if (window.innerWidth < 1024) toggleSidebar();
+                }}
                 className={`
                   flex items-center space-x-4 px-4 py-3 rounded-xl transition-colors
                   ${location.pathname === item.path 
-                    ? 'bg-green-50 text-green-600 font-semibold' 
-                    : 'text-gray-600 hover:bg-gray-50'}
+                    ? 'bg-green-50 text-green-600 font-semibold shadow-sm' 
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-green-600'}
                 `}
+                style={{ minHeight: '52px' }}
               >
                 <span className="text-xl">{item.icon}</span>
                 <span>{item.name}</span>

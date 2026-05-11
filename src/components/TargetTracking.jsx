@@ -1,37 +1,38 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaPlus, FaTrash, FaCheck, FaBullseye } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
+import { supabaseService } from '../services/supabaseService';
 
 const TargetTracking = () => {
+  const { currentUser } = useAuth();
   const [targets, setTargets] = useState([]);
   const [inputValue, setInputValue] = useState('');
+  const [loading, setLoading] = useState(true);
   const inputRef = useRef(null);
   const listRef = useRef(null);
 
-  // Load targets from local storage
+  // Load targets from Supabase
   useEffect(() => {
-    try {
-      const savedTargets = localStorage.getItem('gunlukHedefler');
-      if (savedTargets) {
-        setTargets(JSON.parse(savedTargets));
+    if (!currentUser) return;
+
+    const fetchTargets = async () => {
+      try {
+        setLoading(true);
+        const data = await supabaseService.getDailyTargets(currentUser.uid);
+        if (data) setTargets(data);
+      } catch (error) {
+        console.error('Error loading targets:', error);
+        toast.error('Hedefler yüklenirken bir hata oluştu.');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error loading targets:', error);
-      toast.error('Hedefler yüklenirken bir hata oluştu.');
-    }
-  }, []);
+    };
 
-  // Save targets to local storage
-  useEffect(() => {
-    try {
-      localStorage.setItem('gunlukHedefler', JSON.stringify(targets));
-    } catch (error) {
-      console.error('Error saving targets:', error);
-      toast.error('Hedefler kaydedilirken bir hata oluştu.');
-    }
-  }, [targets]);
+    fetchTargets();
+  }, [currentUser]);
 
-  const handleAddTarget = (e) => {
+  const handleAddTarget = async (e) => {
     e.preventDefault();
     
     const trimmedValue = inputValue.trim();
@@ -40,32 +41,33 @@ const TargetTracking = () => {
       return;
     }
 
-    if (trimmedValue.length < 3) {
-      toast.error('Hedef en az 3 karakter olmalıdır.');
-      return;
+    try {
+      const newTarget = await supabaseService.addDailyTarget(currentUser.uid, trimmedValue);
+      setTargets([newTarget, ...targets]);
+      setInputValue('');
+      toast.success('Hedef başarıyla eklendi!');
+    } catch (error) {
+      toast.error('Hedef eklenemedi.');
     }
-
-    const newTarget = {
-      id: Date.now().toString(),
-      text: trimmedValue,
-      completed: false,
-      date: Date.now(),
-    };
-
-    setTargets([newTarget, ...targets]);
-    setInputValue('');
-    toast.success('Hedef başarıyla eklendi!');
   };
 
-  const toggleTarget = (id) => {
-    setTargets(targets.map(target => 
-      target.id === id ? { ...target, completed: !target.completed } : target
-    ));
+  const toggleTarget = async (id, currentStatus) => {
+    try {
+      const updated = await supabaseService.toggleDailyTarget(id, !currentStatus);
+      setTargets(targets.map(t => t.id === id ? updated : t));
+    } catch (error) {
+      toast.error('Hedef güncellenemedi.');
+    }
   };
 
-  const deleteTarget = (id) => {
-    setTargets(targets.filter(target => target.id !== id));
-    toast.success('Hedef silindi.');
+  const deleteTarget = async (id) => {
+    try {
+      await supabaseService.deleteDailyTarget(id);
+      setTargets(targets.filter(t => t.id !== id));
+      toast.success('Hedef silindi.');
+    } catch (error) {
+      toast.error('Hedef silinemedi.');
+    }
   };
 
   const completedCount = targets.filter(t => t.completed).length;
@@ -82,104 +84,124 @@ const TargetTracking = () => {
   };
 
   return (
-    <section className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col space-y-6">
+    <section className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100 flex flex-col space-y-8 group/section hover:shadow-xl hover:shadow-green-50/50 transition-all duration-500">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-          <FaBullseye className="text-green-600" /> Günlük Hedeflerim
-        </h2>
+        <div>
+          <h2 className="text-2xl font-black text-gray-800 flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 shadow-sm">
+              <FaBullseye size={20} />
+            </div>
+            Günlük Hedeflerim
+          </h2>
+        </div>
         {totalCount > 0 && (
-          <span className="text-sm font-medium text-gray-500">
-            {completedCount}/{totalCount} Tamamlandı (%{progressPercentage})
-          </span>
+          <div className="text-right">
+            <span className="text-2xl font-black text-green-600 block">
+              %{progressPercentage}
+            </span>
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">
+              {completedCount}/{totalCount} Tamamlandı
+            </span>
+          </div>
         )}
       </div>
 
-      {/* Progress Bar */}
+      {/* Progress Bar - Integrated & Shimmering */}
       {totalCount > 0 && (
-        <div className="space-y-2">
-          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-green-500 rounded-full transition-all duration-700 ease-out" 
-              style={{ width: `${progressPercentage}%` }}
-            />
+        <div className="relative h-3 bg-gray-50 rounded-full overflow-hidden border border-gray-100">
+          <div 
+            className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full transition-all duration-1000 ease-out shadow-lg shadow-green-100" 
+            style={{ width: `${progressPercentage}%` }}
+          >
+            {/* Shimmer Effect */}
+            <div className="absolute top-0 left-0 w-full h-full bg-white/20 skew-x-[-20deg] animate-shimmer" />
           </div>
         </div>
       )}
 
-      {/* Add Target Input */}
-      <form onSubmit={handleAddTarget} className="relative group">
+      {/* Add Target Input - Premium Design */}
+      <form onSubmit={handleAddTarget} className="relative group/input">
         <input
           ref={inputRef}
           type="text"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onFocus={handleInputFocus}
-          placeholder="Örn: Erken kalkmak, 45 dk yürüyüş..."
-          className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 pr-14 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-base placeholder:text-gray-400"
+          placeholder="Örn: Erken kalkmak, spora gitmek..."
+          className="w-full bg-gray-50/50 border-2 border-gray-100 rounded-[1.5rem] px-6 py-5 pr-16 text-gray-800 font-bold focus:outline-none focus:ring-4 focus:ring-green-100 focus:border-green-500 focus:bg-white transition-all text-lg placeholder:text-gray-300 shadow-inner"
         />
         <button
           type="submit"
-          className="absolute right-2 top-2 bottom-2 aspect-square bg-green-600 text-white rounded-xl flex items-center justify-center hover:bg-green-700 active:scale-95 transition-all shadow-sm shadow-green-200"
-          style={{ minWidth: '44px', minHeight: '44px' }}
-          aria-label="Hedef Ekle"
+          className="absolute right-3 top-3 bottom-3 aspect-square bg-green-600 text-white rounded-2xl flex items-center justify-center hover:bg-green-700 active:scale-90 transition-all shadow-lg shadow-green-100 group-hover/input:rotate-90"
+          style={{ minWidth: '48px' }}
         >
-          <FaPlus size={18} />
+          <FaPlus size={20} />
         </button>
       </form>
 
-      {/* Targets List */}
-      <div ref={listRef} className="space-y-3 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
+      {/* Targets List - High End UI */}
+      <div ref={listRef} className="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
         {targets.length === 0 ? (
-          <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
-            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-600">
-              <FaBullseye size={32} className="opacity-40" />
+          <div className="py-16 flex flex-col items-center justify-center text-center space-y-6 animate-fade-in">
+            <div className="w-24 h-24 bg-green-50 rounded-[2rem] flex items-center justify-center text-green-600/30 rotate-12 group-hover/section:rotate-0 transition-transform duration-700">
+              <FaBullseye size={48} />
             </div>
-            <div className="space-y-1">
-              <p className="text-gray-800 font-semibold">Henüz hedef eklenmemiş</p>
-              <p className="text-gray-500 text-sm px-8">Bugün için harika bir hedef belirle!</p>
+            <div className="space-y-2">
+              <p className="text-gray-800 text-xl font-black">Listen Bomboş!</p>
+              <p className="text-gray-400 text-sm max-w-[200px] mx-auto font-medium">Bugün seni heyecanlandıracak bir hedef ekleyerek başla.</p>
             </div>
           </div>
         ) : (
-          targets.map((target) => (
+          targets.map((target, idx) => (
             <div
               key={target.id}
-              className={`group flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${
+              className={`group flex items-center gap-5 p-5 rounded-[2rem] border-2 transition-all duration-500 animate-slide-in ${
                 target.completed 
-                ? 'bg-gray-50 border-gray-100 opacity-75' 
-                : 'bg-white border-gray-100 hover:border-green-100 hover:shadow-md hover:shadow-green-50/50'
+                ? 'bg-gray-50/50 border-transparent opacity-60' 
+                : 'bg-white border-gray-50 hover:border-green-100 hover:shadow-xl hover:shadow-green-50/30'
               }`}
+              style={{ animationDelay: `${idx * 0.1}s` }}
             >
-              {/* Custom Checkbox */}
+              {/* Custom Checkbox - Large & Accessible */}
               <button
-                onClick={() => toggleTarget(target.id)}
-                className={`flex-shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                onClick={() => toggleTarget(target.id, target.completed)}
+                className={`flex-shrink-0 w-10 h-10 rounded-2xl border-2 flex items-center justify-center transition-all duration-500 ${
                   target.completed 
-                  ? 'bg-green-500 border-green-500 text-white' 
-                  : 'border-gray-300 hover:border-green-400'
+                  ? 'bg-green-600 border-green-600 text-white shadow-lg shadow-green-200' 
+                  : 'bg-white border-gray-200 hover:border-green-500 group-hover:scale-110'
                 }`}
-                style={{ minWidth: '44px', minHeight: '44px' }}
-                aria-label={target.completed ? "Tamamlanmadı olarak işaretle" : "Tamamlandı olarak işaretle"}
+                style={{ minWidth: '44px' }}
               >
-                {target.completed && <FaCheck size={14} className="animate-scale-in" />}
+                {target.completed ? (
+                  <FaCheck size={16} className="animate-scale-in" />
+                ) : (
+                  <div className="w-2 h-2 bg-gray-100 rounded-full group-hover:bg-green-500 transition-colors" />
+                )}
               </button>
 
-              {/* Target Text */}
-              <span className={`flex-1 text-base transition-all duration-300 ${
-                target.completed 
-                ? 'text-gray-400 line-through italic' 
-                : 'text-gray-700 font-medium'
-              }`}>
-                {target.text}
-              </span>
+              {/* Target Text - Elegant Typography */}
+              <div className="flex-1 flex flex-col min-w-0">
+                <span className={`text-lg transition-all duration-500 truncate ${
+                  target.completed 
+                  ? 'text-gray-400 line-through italic' 
+                  : 'text-gray-800 font-black tracking-tight'
+                }`}>
+                  {target.text}
+                </span>
+                {target.completed && (
+                  <span className="text-[10px] font-black text-green-600 uppercase tracking-widest mt-0.5">
+                    Tamamlandı! 🚀
+                  </span>
+                )}
+              </div>
 
-              {/* Delete Button */}
+              {/* Delete Button - Subtle but Accessible */}
               <button
                 onClick={() => deleteTarget(target.id)}
-                className="flex-shrink-0 text-gray-400 hover:text-red-500 p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 active:scale-90"
-                style={{ minWidth: '44px', minHeight: '44px' }}
-                aria-label="Hedefi Sil"
+                className="flex-shrink-0 w-10 h-10 bg-red-50 text-red-400 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all duration-300 active:scale-90"
+                style={{ minWidth: '44px' }}
               >
-                <FaTrash size={16} />
+                <FaTrash size={14} />
               </button>
             </div>
           ))
@@ -188,17 +210,31 @@ const TargetTracking = () => {
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
+          width: 6px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f9fafb;
+          background: transparent;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #e5e7eb;
-          border-radius: 10px;
+          background: #f3f4f6;
+          border-radius: 20px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #d1d5db;
+          background: #e5e7eb;
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-150%) skewX(-20deg); }
+          100% { transform: translateX(150%) skewX(-20deg); }
+        }
+        .animate-shimmer {
+          animation: shimmer 3s infinite linear;
+        }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(-20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-in {
+          animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         @keyframes scaleIn {
           from { transform: scale(0.5); opacity: 0; }
@@ -207,6 +243,7 @@ const TargetTracking = () => {
         .animate-scale-in {
           animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
+        .ml-13 { margin-left: 3.25rem; }
       `}</style>
     </section>
   );
