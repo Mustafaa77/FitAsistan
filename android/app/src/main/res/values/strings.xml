@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FitAsistan</string>
+    <string name="title_activity_main">FitAsistan</string>
+    <string name="package_name">com.fitasistan.app</string>
+    <string name="custom_url_scheme">com.fitasistan.app</string>
+</resources>
